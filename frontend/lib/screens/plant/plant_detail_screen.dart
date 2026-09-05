@@ -4,6 +4,7 @@
 // Muestra la planta animada con su estado de salud,
 // datos de sensores y controles de riego.
 // ============================================================
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
@@ -23,6 +24,7 @@ class PlantDetailScreen extends StatefulWidget {
 
 class _PlantDetailScreenState extends State<PlantDetailScreen> {
   bool _isWatering = false;
+  Timer? _pollingTimer;
 
   @override
   void initState() {
@@ -32,10 +34,22 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
     final plantProvider = context.read<PlantProvider>();
 
     if (auth.isAuthenticated &&
-        plantProvider.selectedPlant != null &&
-        plantProvider.currentSensorData == null) {
+        plantProvider.selectedPlant != null) {
       plantProvider.loadSensorData(plantProvider.selectedPlant!.id);
+      
+      // Temporizador para refrescar los datos del sensor en tiempo real cada 3 segundos
+      _pollingTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+        if (mounted && plantProvider.selectedPlant != null) {
+          plantProvider.loadSensorData(plantProvider.selectedPlant!.id);
+        }
+      });
     }
+  }
+
+  @override
+  void dispose() {
+    _pollingTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _handleWatering() async {
@@ -150,7 +164,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                           plantName: plant.commonName,
                           healthScore: sensorData.healthScore,
                           healthStatus: sensorData.healthStatus,
-                          isWatering: _isWatering,
+                          isWatering: _isWatering || (sensorData.pumpActive == 1),
                           size: 340,
                         ),
                         const SizedBox(height: 30),
@@ -244,7 +258,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Icon(
-                      Icons.thermostat,
+                      Icons.water_drop,
                       color: SolarColors.primaryDark,
                       size: 20,
                     ),
@@ -273,7 +287,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
           ),
         ),
         const SizedBox(width: 14),
-        // Luz solar
+        // Temperatura
         Expanded(
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 8),
@@ -294,13 +308,13 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Icon(
-                      Icons.wb_sunny_outlined,
+                      Icons.thermostat,
                       color: SolarColors.primaryDark,
                       size: 20,
                     ),
                     const SizedBox(width: 6),
                     const Text(
-                      'Luz solar:',
+                      'Temperatura:',
                       style: TextStyle(
                         color: SolarColors.primaryDark,
                         fontWeight: FontWeight.bold,
@@ -311,7 +325,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '${data.lightLevel?.round() ?? 0} %',
+                  '${data.temperature?.round() ?? 0} °C',
                   style: const TextStyle(
                     color: SolarColors.primary,
                     fontSize: 28,
@@ -361,7 +375,7 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
           Text(
             plant.nextFertilizeDate != null
                 ? _formatDate(plant.nextFertilizeDate!)
-                : 'Jun 26 de Marzo',
+                : '26 de Junio',
             style: const TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 16,

@@ -5,3 +5,16 @@ frontend/build/
 backend/__pycache__/
 .env
 *.pyc
+analyze_output.txt
+
+# ===== IDE / OS =====
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ===== Asistentes de IA =====
+.agent/
+.agents/
+skills-lock.json
+.claude/

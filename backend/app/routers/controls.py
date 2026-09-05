@@ -11,6 +11,7 @@ from ..models.plant import Plant
 from ..schemas.recommendation import WaterControlRequest, WaterControlResponse
 from ..utils.auth import get_current_user
 from ..config import get_settings
+from ..utils.hardware_helper import enviar_comando_serial
 
 router = APIRouter(prefix="/api/controls", tags=["Control Remoto"])
 
@@ -50,6 +51,9 @@ async def activate_watering(
         # En producción, esto se conecta al broker MQTT
         # Por ahora, simulamos el envío exitoso
         # mqtt_client.publish(settings.MQTT_TOPIC_CONTROL, json.dumps(command))
+
+        # Enviar comando por puerto serial al ESP8266 NodeMCU
+        enviar_comando_serial(f"WATER:{request.duration_seconds}")
 
         return WaterControlResponse(
             success=True,
